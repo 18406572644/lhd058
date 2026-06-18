@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
-import { LayoutDashboard, Cable, LogOut, User, PanelLeft } from 'lucide-vue-next'
+import { LayoutDashboard, Cable, Smartphone, LogOut, User, PanelLeft } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 
@@ -12,6 +12,7 @@ const username = ref('')
 
 const LayoutDashboardIcon = markRaw(LayoutDashboard)
 const CableIcon = markRaw(Cable)
+const SmartphoneIcon = markRaw(Smartphone)
 const LogOutIcon = markRaw(LogOut)
 const UserIcon = markRaw(User)
 const PanelLeftIcon = markRaw(PanelLeft)
@@ -82,6 +83,19 @@ function isActive(path: string) {
           <component :is="CableIcon" class="w-5 h-5 flex-shrink-0" />
           <span v-if="!collapsed" class="truncate">充电线管理</span>
         </router-link>
+
+        <router-link
+          to="/devices"
+          :class="[
+            'flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 font-heading text-sm tracking-wide',
+            isActive('/devices')
+              ? 'bg-electric/15 text-electric border border-electric/20'
+              : 'text-text-muted hover:text-white hover:bg-white/5'
+          ]"
+        >
+          <component :is="SmartphoneIcon" class="w-5 h-5 flex-shrink-0" />
+          <span v-if="!collapsed" class="truncate">设备管理</span>
+        </router-link>
       </nav>
 
       <div class="p-2 border-t border-electric/10">
@@ -99,7 +113,17 @@ function isActive(path: string) {
       <header class="h-16 bg-space-deep/50 border-b border-electric/10 backdrop-blur-md px-6 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <h1 class="font-heading text-xl font-semibold text-white tracking-wide">
-            {{ router.currentRoute.value.path === '/' ? '仪表盘' : router.currentRoute.value.path.startsWith('/cables/') ? '充电线详情' : '充电线管理' }}
+            {{
+              router.currentRoute.value.path === '/'
+                ? '仪表盘'
+                : router.currentRoute.value.path.startsWith('/cables/')
+                ? '充电线详情'
+                : router.currentRoute.value.path === '/cables'
+                ? '充电线管理'
+                : router.currentRoute.value.path === '/devices'
+                ? '设备管理'
+                : ''
+            }}
           </h1>
         </div>
         <div class="flex items-center gap-4">

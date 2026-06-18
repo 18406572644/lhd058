@@ -9,7 +9,14 @@ const router = Router()
 router.use(authMiddleware)
 
 function getDevicesForCable(cableId: number) {
-  return db.prepare('SELECT id, name, device_type as deviceType FROM devices WHERE cable_id = ?').all(cableId)
+  const rows = db.prepare(`
+    SELECT d.id, d.name, d.device_type as deviceType, d.brand, d.model, d.status, d.is_special as isSpecial
+    FROM devices d
+    INNER JOIN cable_devices cd ON d.id = cd.device_id
+    WHERE cd.cable_id = ?
+    ORDER BY d.name ASC
+  `).all(cableId) as any[]
+  return rows.map((r: any) => ({ ...r, isSpecial: !!r.isSpecial }))
 }
 
 function transformCable(cable: any) {
@@ -97,7 +104,7 @@ router.get('/:id', (req: Request, res: Response): void => {
 
 router.post('/', (req: Request, res: Response): void => {
   try {
-    const { model, brand, interfaceType, length, color, price, purchaseDate, expectedLifeDays, status, devices } = req.body
+    const { model, brand, interfaceType, length, color, price, purchaseDate, expectedLifeDays, status, devices, deviceIds } = req.body
 
     if (!model || !interfaceType || !length || !purchaseDate) {
       res.status(400).json({ success: false, error: '缺少必填字段' })
@@ -122,10 +129,28 @@ router.post('/', (req: Request, res: Response): void => {
 
     const cableId = Number(result.lastInsertRowid)
 
-    const insertDevice = db.prepare('INSERT INTO devices (cable_id, name, device_type) VALUES (?, ?, ?)')
-    if (Array.isArray(devices)) {
+    if (Array.isArray(deviceIds) && deviceIds.length > 0) {
+      const insertCableDevice = db.prepare('INSERT OR IGNORE INTO cable_devices (cable_id, device_id) VALUES (?, ?)')
+      for (const deviceId of deviceIds) {
+        const device = db.prepare('SELECT id FROM devices WHERE id = ? AND user_id = ?').get(deviceId, req.userId)
+        if (device) {
+          insertCableDevice.run(cableId, deviceId)
+        }
+      }
+    } else if (Array.isArray(devices) && devices.length > 0) {
+      const insertCableDevice = db.prepare('INSERT OR IGNORE INTO cable_devices (cable_id, device_id) VALUES (?, ?)')
       for (const device of devices) {
-        insertDevice.run(cableId, device.name, device.deviceType)
+        let deviceId: number
+        const existingDevice = db.prepare('SELECT id FROM devices WHERE user_id = ? AND name = ?').get(req.userId, device.name) as any
+        if (existingDevice) {
+          deviceId = existingDevice.id
+        } else {
+          const result = db.prepare(
+            'INSERT INTO devices (user_id, name, device_type) VALUES (?, ?, ?)'
+          ).run(req.userId, device.name, device.deviceType || '其他')
+          deviceId = Number(result.lastInsertRowid)
+        }
+        insertCableDevice.run(cableId, deviceId)
       }
     }
 
@@ -148,7 +173,7 @@ router.put('/:id', (req: Request, res: Response): void => {
       return
     }
 
-    const { model, brand, interfaceType, length, color, price, purchaseDate, expectedLifeDays, status, devices } = req.body
+    const { model, brand, interfaceType, length, color, price, purchaseDate, expectedLifeDays, status, devices, deviceIds } = req.body
 
     db.prepare(
       `UPDATE cables SET model = ?, brand = ?, interface_type = ?, length = ?, color = ?, price = ?, purchase_date = ?,
@@ -166,11 +191,34 @@ router.put('/:id', (req: Request, res: Response): void => {
       req.params.id
     )
 
-    if (Array.isArray(devices)) {
-      db.prepare('DELETE FROM devices WHERE cable_id = ?').run(req.params.id)
-      const insertDevice = db.prepare('INSERT INTO devices (cable_id, name, device_type) VALUES (?, ?, ?)')
-      for (const device of devices) {
-        insertDevice.run(Number(req.params.id), device.name, device.deviceType)
+    if (Array.isArray(deviceIds)) {
+      db.prepare('DELETE FROM cable_devices WHERE cable_id = ?').run(req.params.id)
+      if (deviceIds.length > 0) {
+        const insertCableDevice = db.prepare('INSERT OR IGNORE INTO cable_devices (cable_id, device_id) VALUES (?, ?)')
+        for (const deviceId of deviceIds) {
+          const device = db.prepare('SELECT id FROM devices WHERE id = ? AND user_id = ?').get(deviceId, req.userId)
+          if (device) {
+            insertCableDevice.run(Number(req.params.id), deviceId)
+          }
+        }
+      }
+    } else if (Array.isArray(devices)) {
+      db.prepare('DELETE FROM cable_devices WHERE cable_id = ?').run(req.params.id)
+      if (devices.length > 0) {
+        const insertCableDevice = db.prepare('INSERT OR IGNORE INTO cable_devices (cable_id, device_id) VALUES (?, ?)')
+        for (const device of devices) {
+          let deviceId: number
+          const existingDevice = db.prepare('SELECT id FROM devices WHERE user_id = ? AND name = ?').get(req.userId, device.name) as any
+          if (existingDevice) {
+            deviceId = existingDevice.id
+          } else {
+            const result = db.prepare(
+              'INSERT INTO devices (user_id, name, device_type) VALUES (?, ?, ?)'
+            ).run(req.userId, device.name, device.deviceType || '其他')
+            deviceId = Number(result.lastInsertRowid)
+          }
+          insertCableDevice.run(Number(req.params.id), deviceId)
+        }
       }
     }
 

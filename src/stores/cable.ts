@@ -3,8 +3,13 @@ import { ref } from 'vue'
 import { get, post, put, del, patch, postForm } from '@/composables/useApi'
 
 export interface Device {
+  id?: number
   name: string
   deviceType: string
+  brand?: string
+  model?: string
+  status?: string
+  isSpecial?: boolean
 }
 
 export interface Cable {

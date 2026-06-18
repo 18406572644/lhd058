@@ -9,6 +9,7 @@ import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import authRoutes from './routes/auth.js'
 import cableRoutes from './routes/cables.js'
+import deviceRoutes from './routes/devices.js'
 import statsRoutes from './routes/stats.js'
 import uploadRoutes from './routes/upload.js'
 
@@ -27,6 +28,7 @@ app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/cables', cableRoutes)
+app.use('/api/devices', deviceRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/upload', uploadRoutes)
 

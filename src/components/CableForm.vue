@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { Plus, X, Upload } from 'lucide-vue-next'
+import { ref, watch, computed, onMounted } from 'vue'
+import { Upload } from 'lucide-vue-next'
 import type { FormInstance } from 'element-plus'
-import type { Cable, Device } from '@/stores/cable'
+import { ElMessage } from 'element-plus'
+import type { Cable } from '@/stores/cable'
+import { useDeviceStore } from '@/stores/device'
 
 const props = defineProps<{
   visible: boolean
@@ -11,8 +13,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', data: { formData: Partial<Cable>; imageFile: File | null }): void
+  (e: 'save', data: { formData: Partial<Cable> & { deviceIds?: number[] }; imageFile: File | null }): void
 }>()
+
+const deviceStore = useDeviceStore()
 
 const formRef = ref<FormInstance>()
 
@@ -28,7 +32,8 @@ const form = ref({
   status: '正常',
 })
 
-const devices = ref<Device[]>([])
+const selectedDeviceIds = ref<number[]>([])
+const devicesLoading = ref(false)
 const imageFile = ref<File | null>(null)
 const imagePreview = ref('')
 
@@ -44,7 +49,24 @@ const rules = {
   interfaceType: [{ required: true, message: '请选择接口类型', trigger: 'change' }],
 }
 
-watch(() => props.visible, (val) => {
+onMounted(async () => {
+  await loadDevices()
+})
+
+async function loadDevices() {
+  if (deviceStore.allDevices.length === 0) {
+    devicesLoading.value = true
+    try {
+      await deviceStore.fetchAllDevices()
+    } catch {
+      ElMessage.error('加载设备列表失败')
+    } finally {
+      devicesLoading.value = false
+    }
+  }
+}
+
+watch(() => props.visible, async (val) => {
   if (val && props.cable) {
     form.value = {
       model: props.cable.model,
@@ -57,23 +79,17 @@ watch(() => props.visible, (val) => {
       expectedLifeDays: props.cable.expectedLifeDays,
       status: props.cable.status,
     }
-    devices.value = props.cable.devices?.length ? [...props.cable.devices] : []
+    selectedDeviceIds.value = props.cable.devices?.map(d => d.id).filter(id => id !== undefined) as number[] || []
     imagePreview.value = props.cable.imageUrl || ''
+    await loadDevices()
   } else if (val) {
     form.value = { model: '', brand: '', interfaceType: '', length: '', color: '', price: 0, purchaseDate: '', expectedLifeDays: 730, status: '正常' }
-    devices.value = []
+    selectedDeviceIds.value = []
     imagePreview.value = ''
     imageFile.value = null
+    await loadDevices()
   }
 })
-
-function addDevice() {
-  devices.value.push({ name: '', deviceType: '' })
-}
-
-function removeDevice(index: number) {
-  devices.value.splice(index, 1)
-}
 
 function handleImageChange(uploadFile: any) {
   const file = uploadFile.raw || uploadFile
@@ -91,9 +107,9 @@ async function handleSubmit() {
   if (!formRef.value) return
   await formRef.value.validate((valid) => {
     if (!valid) return
-    const formData: Partial<Cable> = {
+    const formData: Partial<Cable> & { deviceIds: number[] } = {
       ...form.value,
-      devices: devices.value.filter(d => d.name.trim()),
+      deviceIds: selectedDeviceIds.value,
     }
     emit('save', { formData, imageFile: imageFile.value })
   })
@@ -167,18 +183,22 @@ function handleClose() {
       </div>
 
       <el-form-item label="适配设备">
-        <div class="w-full space-y-2">
-          <div v-for="(device, index) in devices" :key="index" class="flex gap-2 items-center">
-            <el-input v-model="device.name" placeholder="设备名称，如 iPhone 15" class="flex-1" />
-            <el-input v-model="device.deviceType" placeholder="类型，如 Phone" class="flex-1" />
-            <button @click="removeDevice(index)" class="text-danger hover:text-red-300 p-1 transition-colors">
-              <X class="w-4 h-4" />
-            </button>
-          </div>
-          <el-button type="default" size="small" @click="addDevice">
-            <Plus class="w-3.5 h-3.5 mr-1" /> 添加适配设备
-          </el-button>
-        </div>
+        <el-select
+          v-model="selectedDeviceIds"
+          multiple
+          filterable
+          placeholder="从设备库选择可充电的设备"
+          class="w-full"
+          :loading="devicesLoading"
+        >
+          <el-option
+            v-for="device in deviceStore.allDevices"
+            :key="device.id"
+            :label="`${device.name} (${device.deviceType})`"
+            :value="device.id"
+          />
+        </el-select>
+        <div class="text-xs text-text-muted mt-1">一条充电线可充多个设备，一个设备可用多条线</div>
       </el-form-item>
 
       <el-form-item label="实拍图片">

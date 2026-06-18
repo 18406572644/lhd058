@@ -28,6 +28,11 @@ const routes: RouteRecordRaw[] = [
         name: 'cableDetail',
         component: () => import('@/pages/CableDetailPage.vue'),
       },
+      {
+        path: 'devices',
+        name: 'devices',
+        component: () => import('@/pages/DevicesPage.vue'),
+      },
     ],
   },
 ]
