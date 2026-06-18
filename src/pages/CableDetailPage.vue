@@ -75,9 +75,9 @@ async function handleStatusChange(status: string) {
   }
 }
 
-async function handleFormSave(data: Partial<Cable>) {
+async function handleFormSave(data: { formData: Partial<Cable>; imageFile: File | null }) {
   if (!cable.value) return
-  const res = await cableStore.updateCable(cable.value.id, data)
+  const res = await cableStore.updateCable(cable.value.id, data.formData, data.imageFile)
   if (res.success) {
     ElMessage.success('更新成功')
     formVisible.value = false

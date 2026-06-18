@@ -42,11 +42,11 @@ router.get('/', (req: Request, res: Response): void => {
       params.push(color)
     }
     if (startDate) {
-      conditions.push('c.purchase_date >= ?')
+      conditions.push('date(c.purchase_date) >= date(?)')
       params.push(startDate)
     }
     if (endDate) {
-      conditions.push('c.purchase_date <= ?')
+      conditions.push('date(c.purchase_date) <= date(?)')
       params.push(endDate)
     }
 
@@ -247,7 +247,7 @@ router.post('/:id/image', singleUpload, (req: Request, res: Response): void => {
 
     res.json({
       success: true,
-      data: { url: imageUrl },
+      data: { imageUrl },
     })
   } catch (error) {
     res.status(500).json({ success: false, error: '上传图片失败' })

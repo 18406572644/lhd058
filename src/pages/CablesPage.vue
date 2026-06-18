@@ -100,13 +100,13 @@ async function handleStatusChange(cable: Cable, status: string) {
   }
 }
 
-async function handleFormSave(data: Partial<Cable>) {
+async function handleFormSave(data: { formData: Partial<Cable>; imageFile: File | null }) {
   try {
     let res
     if (editingCable.value) {
-      res = await cableStore.updateCable(editingCable.value.id, data)
+      res = await cableStore.updateCable(editingCable.value.id, data.formData, data.imageFile)
     } else {
-      res = await cableStore.createCable(data)
+      res = await cableStore.createCable(data.formData, data.imageFile)
     }
     if (res.success) {
       ElMessage.success(editingCable.value ? '更新成功' : '创建成功')

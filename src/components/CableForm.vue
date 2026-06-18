@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', data: Partial<Cable>): void
+  (e: 'save', data: { formData: Partial<Cable>; imageFile: File | null }): void
 }>()
 
 const formRef = ref<FormInstance>()
@@ -87,8 +87,11 @@ async function handleSubmit() {
   if (!formRef.value) return
   await formRef.value.validate((valid) => {
     if (!valid) return
-    const data: any = { ...form.value, devices: devices.value.filter(d => d.name.trim()) }
-    emit('save', data)
+    const formData: Partial<Cable> = {
+      ...form.value,
+      devices: devices.value.filter(d => d.name.trim()),
+    }
+    emit('save', { formData, imageFile: imageFile.value })
   })
 }
 

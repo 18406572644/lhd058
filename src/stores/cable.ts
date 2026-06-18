@@ -86,23 +86,55 @@ export const useCableStore = defineStore('cable', () => {
   }
 
   async function fetchCable(id: number) {
-    const res = await get<{ cable: Cable }>(`/api/cables/${id}`)
+    const res = await get<Cable>(`/api/cables/${id}`)
     if (res.success) {
-      currentCable.value = res.data.cable
+      currentCable.value = res.data
     }
     return res
   }
 
-  async function createCable(data: Partial<Cable>) {
+  async function createCable(data: Partial<Cable>, imageFile?: File | null) {
     const res = await post<Cable>('/api/cables', data)
     if (res.success) {
+      const newCable = res.data
+      if (imageFile) {
+        try {
+          const imgRes = await postForm<{ imageUrl: string }>(`/api/cables/${newCable.id}/image`, imageFile)
+          if (imgRes.success) {
+            newCable.imageUrl = imgRes.data.imageUrl
+          }
+        } catch {
+          // 图片上传失败不影响创建成功
+        }
+      }
+      pagination.value.page = 1
       await fetchCables()
     }
     return res
   }
 
-  async function updateCable(id: number, data: Partial<Cable>) {
+  async function updateCable(id: number, data: Partial<Cable>, imageFile?: File | null) {
     const res = await put<Cable>(`/api/cables/${id}`, data)
+    if (res.success) {
+      let updatedCable = res.data
+      if (imageFile) {
+        try {
+          const imgRes = await postForm<{ imageUrl: string }>(`/api/cables/${id}/image`, imageFile)
+          if (imgRes.success) {
+            updatedCable = { ...updatedCable, imageUrl: imgRes.data.imageUrl }
+          }
+        } catch {
+          // 图片上传失败不影响更新成功
+        }
+      }
+      if (currentCable.value?.id === id) {
+        currentCable.value = updatedCable
+      }
+      const idx = cables.value.findIndex(c => c.id === id)
+      if (idx !== -1) {
+        cables.value[idx] = updatedCable
+      }
+    }
     return res
   }
 
@@ -116,11 +148,29 @@ export const useCableStore = defineStore('cable', () => {
 
   async function updateStatus(id: number, status: string) {
     const res = await patch<Cable>(`/api/cables/${id}/status`, { status })
+    if (res.success) {
+      if (currentCable.value?.id === id) {
+        currentCable.value = { ...currentCable.value, ...res.data }
+      }
+      const idx = cables.value.findIndex(c => c.id === id)
+      if (idx !== -1) {
+        cables.value[idx] = { ...cables.value[idx], ...res.data }
+      }
+    }
     return res
   }
 
   async function uploadImage(id: number, file: File) {
     const res = await postForm<{ imageUrl: string }>(`/api/cables/${id}/image`, file)
+    if (res.success) {
+      if (currentCable.value?.id === id) {
+        currentCable.value = { ...currentCable.value, imageUrl: res.data.imageUrl }
+      }
+      const idx = cables.value.findIndex(c => c.id === id)
+      if (idx !== -1) {
+        cables.value[idx] = { ...cables.value[idx], imageUrl: res.data.imageUrl }
+      }
+    }
     return res
   }
 
