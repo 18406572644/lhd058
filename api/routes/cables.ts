@@ -97,7 +97,7 @@ router.get('/:id', (req: Request, res: Response): void => {
 
 router.post('/', (req: Request, res: Response): void => {
   try {
-    const { model, interfaceType, length, color, purchaseDate, expectedLifeDays, status, devices } = req.body
+    const { model, brand, interfaceType, length, color, price, purchaseDate, expectedLifeDays, status, devices } = req.body
 
     if (!model || !interfaceType || !length || !purchaseDate) {
       res.status(400).json({ success: false, error: '缺少必填字段' })
@@ -105,14 +105,16 @@ router.post('/', (req: Request, res: Response): void => {
     }
 
     const result = db.prepare(
-      `INSERT INTO cables (user_id, model, interface_type, length, color, purchase_date, expected_life_days, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO cables (user_id, model, brand, interface_type, length, color, price, purchase_date, expected_life_days, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       req.userId,
       model,
+      brand || '',
       interfaceType,
       length,
       color || '黑色',
+      price || 0,
       purchaseDate,
       expectedLifeDays || 730,
       status || '正常'
@@ -146,16 +148,18 @@ router.put('/:id', (req: Request, res: Response): void => {
       return
     }
 
-    const { model, interfaceType, length, color, purchaseDate, expectedLifeDays, status, devices } = req.body
+    const { model, brand, interfaceType, length, color, price, purchaseDate, expectedLifeDays, status, devices } = req.body
 
     db.prepare(
-      `UPDATE cables SET model = ?, interface_type = ?, length = ?, color = ?, purchase_date = ?,
+      `UPDATE cables SET model = ?, brand = ?, interface_type = ?, length = ?, color = ?, price = ?, purchase_date = ?,
        expected_life_days = ?, status = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(
       model ?? cable.model,
+      brand ?? cable.brand,
       interfaceType ?? cable.interface_type,
       length ?? cable.length,
       color ?? cable.color,
+      price ?? cable.price,
       purchaseDate ?? cable.purchase_date,
       expectedLifeDays ?? cable.expected_life_days,
       status ?? cable.status,

@@ -192,9 +192,16 @@ function handleSizeChange(size: number) {
         <el-table-column prop="model" label="型号" min-width="180">
           <template #default="{ row }">
             <span class="font-heading text-white font-medium">{{ row.model }}</span>
+            <div v-if="row.brand" class="text-text-muted text-xs mt-0.5">{{ row.brand }}</div>
           </template>
         </el-table-column>
         <el-table-column prop="interfaceType" label="接口类型" width="110" />
+        <el-table-column prop="price" label="价格" width="90">
+          <template #default="{ row }">
+            <span v-if="row.price" class="text-electric">¥{{ row.price.toFixed(2) }}</span>
+            <span v-else class="text-text-muted">-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="length" label="长度" width="80" />
         <el-table-column prop="color" label="颜色" width="80" />
         <el-table-column prop="purchaseDate" label="购买日期" width="120">

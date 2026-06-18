@@ -10,9 +10,11 @@ export interface Device {
 export interface Cable {
   id: number
   model: string
+  brand: string
   interfaceType: string
   length: string
   color: string
+  price: number
   purchaseDate: string
   expectedLifeDays: number
   status: string
@@ -55,6 +57,56 @@ interface ExpiringItem {
   id: number
   model: string
   daysRemaining: number
+}
+
+export interface BrandLifeItem {
+  brand: string
+  count: number
+  avgLifeDays: number
+}
+
+export interface InterfaceDamageItem {
+  interfaceType: string
+  total: number
+  damaged: number
+  damageRate: number
+}
+
+export interface YearlyCostItem {
+  year: string
+  count: number
+  totalAmount: number
+}
+
+export interface DailyCostItem {
+  id: number
+  model: string
+  brand: string
+  price: number
+  dailyCost: number
+  expectedLifeDays: number
+  daysUsed: number
+  totalCostToDate: number
+  status: string
+}
+
+export interface ColorStatItem {
+  color: string
+  count: number
+}
+
+export interface LengthStatItem {
+  length: string
+  count: number
+}
+
+export interface SummaryData {
+  totalInvestment: number
+  avgPrice: number
+  mostCommonColor: string
+  mostCommonInterface: string
+  avgLifeDays: number
+  totalCables: number
 }
 
 export const useCableStore = defineStore('cable', () => {
@@ -189,6 +241,45 @@ export const useCableStore = defineStore('cable', () => {
     return res
   }
 
+  async function fetchBrandLife() {
+    const res = await get<BrandLifeItem[]>('/api/stats/brand-life')
+    return res
+  }
+
+  async function fetchInterfaceDamageRate() {
+    const res = await get<InterfaceDamageItem[]>('/api/stats/interface-damage-rate')
+    return res
+  }
+
+  async function fetchYearlyCost() {
+    const res = await get<YearlyCostItem[]>('/api/stats/yearly-cost')
+    return res
+  }
+
+  async function fetchDailyCost() {
+    const res = await get<DailyCostItem[]>('/api/stats/daily-cost')
+    return res
+  }
+
+  async function fetchColorStats() {
+    const res = await get<ColorStatItem[]>('/api/stats/color-stats')
+    return res
+  }
+
+  async function fetchLengthStats() {
+    const res = await get<LengthStatItem[]>('/api/stats/length-stats')
+    return res
+  }
+
+  async function fetchSummary() {
+    const res = await get<SummaryData>('/api/stats/summary')
+    return res
+  }
+
+  function getExportUrl() {
+    return '/api/stats/export'
+  }
+
   function setFilters(newFilters: CableFilters) {
     filters.value = { ...newFilters }
     pagination.value.page = 1
@@ -215,6 +306,14 @@ export const useCableStore = defineStore('cable', () => {
     fetchOverview,
     fetchMonthly,
     fetchExpiring,
+    fetchBrandLife,
+    fetchInterfaceDamageRate,
+    fetchYearlyCost,
+    fetchDailyCost,
+    fetchColorStats,
+    fetchLengthStats,
+    fetchSummary,
+    getExportUrl,
     setFilters,
     setPagination,
   }

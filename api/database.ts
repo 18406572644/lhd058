@@ -28,9 +28,11 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     model TEXT NOT NULL,
+    brand TEXT DEFAULT '',
     interface_type TEXT NOT NULL,
     length TEXT NOT NULL,
     color TEXT NOT NULL DEFAULT '黑色',
+    price REAL DEFAULT 0,
     purchase_date TEXT NOT NULL,
     expected_life_days INTEGER NOT NULL DEFAULT 730,
     status TEXT NOT NULL DEFAULT '正常' CHECK(status IN ('正常','损坏','丢失')),
@@ -50,7 +52,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_cables_status ON cables(status);
   CREATE INDEX IF NOT EXISTS idx_cables_interface_type ON cables(interface_type);
   CREATE INDEX IF NOT EXISTS idx_cables_purchase_date ON cables(purchase_date);
+  CREATE INDEX IF NOT EXISTS idx_cables_brand ON cables(brand);
   CREATE INDEX IF NOT EXISTS idx_devices_cable_id ON devices(cable_id);
 `)
+
+const columns = db.pragma('table_info(cables)') as any[]
+const hasBrand = columns.some((c: any) => c.name === 'brand')
+const hasPrice = columns.some((c: any) => c.name === 'price')
+
+if (!hasBrand) {
+  db.exec('ALTER TABLE cables ADD COLUMN brand TEXT DEFAULT ""')
+}
+if (!hasPrice) {
+  db.exec('ALTER TABLE cables ADD COLUMN price REAL DEFAULT 0')
+}
 
 export default db

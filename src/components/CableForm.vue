@@ -18,9 +18,11 @@ const formRef = ref<FormInstance>()
 
 const form = ref({
   model: '',
+  brand: '',
   interfaceType: '',
   length: '',
   color: '',
+  price: 0,
   purchaseDate: '',
   expectedLifeDays: 730,
   status: '正常',
@@ -46,9 +48,11 @@ watch(() => props.visible, (val) => {
   if (val && props.cable) {
     form.value = {
       model: props.cable.model,
+      brand: props.cable.brand || '',
       interfaceType: props.cable.interfaceType,
       length: props.cable.length,
       color: props.cable.color,
+      price: props.cable.price || 0,
       purchaseDate: props.cable.purchaseDate?.split('T')[0] || props.cable.purchaseDate || '',
       expectedLifeDays: props.cable.expectedLifeDays,
       status: props.cable.status,
@@ -56,7 +60,7 @@ watch(() => props.visible, (val) => {
     devices.value = props.cable.devices?.length ? [...props.cable.devices] : []
     imagePreview.value = props.cable.imageUrl || ''
   } else if (val) {
-    form.value = { model: '', interfaceType: '', length: '', color: '', purchaseDate: '', expectedLifeDays: 730, status: '正常' }
+    form.value = { model: '', brand: '', interfaceType: '', length: '', color: '', price: 0, purchaseDate: '', expectedLifeDays: 730, status: '正常' }
     devices.value = []
     imagePreview.value = ''
     imageFile.value = null
@@ -113,6 +117,16 @@ function handleClose() {
       <el-form-item label="型号" prop="model">
         <el-input v-model="form.model" placeholder="例如：USB-C to USB-C 100W 快充线" />
       </el-form-item>
+
+      <div class="grid grid-cols-2 gap-4">
+        <el-form-item label="品牌">
+          <el-input v-model="form.brand" placeholder="例如：Anker、绿联" />
+        </el-form-item>
+
+        <el-form-item label="价格（元）">
+          <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" class="w-full" />
+        </el-form-item>
+      </div>
 
       <div class="grid grid-cols-2 gap-4">
         <el-form-item label="接口类型" prop="interfaceType">

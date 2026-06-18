@@ -174,6 +174,13 @@ function formatDate(dateStr: string | undefined) {
             <div class="flex items-center gap-3 py-3 border-b border-electric/5">
               <Tag class="w-5 h-5 text-electric/70" />
               <div>
+                <p class="text-text-muted text-xs font-heading uppercase tracking-wider mb-0.5">品牌</p>
+                <p class="text-white font-heading text-base">{{ cable.brand || '-' }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 py-3 border-b border-electric/5">
+              <Tag class="w-5 h-5 text-electric/70" />
+              <div>
                 <p class="text-text-muted text-xs font-heading uppercase tracking-wider mb-0.5">接口类型</p>
                 <p class="text-white font-heading text-base">{{ cable.interfaceType }}</p>
               </div>
@@ -200,6 +207,16 @@ function formatDate(dateStr: string | undefined) {
               </div>
             </div>
             <div class="flex items-center gap-3 py-3 border-b border-electric/5">
+              <Tag class="w-5 h-5 text-electric/70" />
+              <div>
+                <p class="text-text-muted text-xs font-heading uppercase tracking-wider mb-0.5">购买价格</p>
+                <p class="text-white font-heading text-base">
+                  <span v-if="cable.price">¥{{ cable.price.toFixed(2) }}</span>
+                  <span v-else>-</span>
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 py-3 border-b border-electric/5">
               <Timer class="w-5 h-5 text-electric/70" />
               <div>
                 <p class="text-text-muted text-xs font-heading uppercase tracking-wider mb-0.5">预期寿命</p>
@@ -209,8 +226,11 @@ function formatDate(dateStr: string | undefined) {
             <div class="flex items-center gap-3 py-3 border-b border-electric/5">
               <Check class="w-5 h-5 text-electric/70" />
               <div>
-                <p class="text-text-muted text-xs font-heading uppercase tracking-wider mb-0.5">录入时间</p>
-                <p class="text-white font-heading text-base">{{ formatDate(cable.createdAt) }}</p>
+                <p class="text-text-muted text-xs font-heading uppercase tracking-wider mb-0.5">日均成本</p>
+                <p class="text-white font-heading text-base">
+                  <span v-if="cable.price && cable.expectedLifeDays">¥{{ (cable.price / cable.expectedLifeDays).toFixed(4) }}</span>
+                  <span v-else>-</span>
+                </p>
               </div>
             </div>
           </div>
